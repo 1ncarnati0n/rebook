@@ -35,8 +35,8 @@ export function BookRenderer({
       const colors = THEME_COLORS[theme];
       const fontStack =
         fontFamily === 'serif'
-          ? 'Georgia, "Times New Roman", serif'
-          : '-apple-system, "Helvetica Neue", sans-serif';
+          ? '"Noto Serif KR", Georgia, "Times New Roman", serif'
+          : 'Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", -apple-system, "Helvetica Neue", sans-serif';
 
       rendition.themes.register('custom', {
         body: {
@@ -57,9 +57,27 @@ export function BookRenderer({
     [fontSize, theme, lineHeight, fontFamily],
   );
 
+  const FONT_URLS = [
+    'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap',
+    'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css',
+  ];
+
   const handleRendition = useCallback(
     (rendition: Rendition) => {
       renditionRef.current = rendition;
+
+      // Inject Korean web fonts into epub iframe on each chapter load
+      rendition.hooks.content.register(
+        (contents: { document: Document }) => {
+          FONT_URLS.forEach((href) => {
+            const link = contents.document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            contents.document.head.appendChild(link);
+          });
+        },
+      );
+
       applyStyles(rendition);
     },
     [applyStyles],
@@ -133,7 +151,15 @@ export function BookRenderer({
       reader: {
         ...ReactReaderStyle.reader,
         ...(isScrolled
-          ? { top: 0, left: 0, bottom: 0, right: 0, inset: 0 }
+          ? {
+              top: 20,
+              bottom: 20,
+              left: '50%',
+              right: 'auto',
+              transform: 'translateX(-50%)',
+              maxWidth: 720,
+              width: 'calc(100% - 48px)',
+            }
           : {}),
       },
       arrow: {

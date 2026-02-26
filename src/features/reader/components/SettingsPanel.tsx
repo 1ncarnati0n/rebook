@@ -43,14 +43,14 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[340px] overflow-y-auto border-l-0 shadow-2xl">
-        <SheetHeader className="pb-2">
-          <SheetTitle className="text-base font-semibold tracking-tight">
+      <SheetContent side="right" className="w-[340px] overflow-y-auto border-l-0 p-0 shadow-2xl">
+        <SheetHeader className="px-5 pt-5 pb-0">
+          <SheetTitle className="pr-8 text-base font-semibold tracking-tight">
             Settings
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-4 space-y-7 pb-8">
+        <div className="mt-6 space-y-7 px-5 pb-8">
           {/* View Mode */}
           <section>
             <span className="mb-3 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
