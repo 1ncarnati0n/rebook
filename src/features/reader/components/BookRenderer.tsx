@@ -84,8 +84,7 @@ export function BookRenderer({
           // @ts-expect-error epub.js internal: spine.items not in public types
           const items = book.spine.items || book.spine.spineItems || [];
           const total = items.length;
-          // @ts-expect-error epub.js internal: location.start.index
-          const currentIndex = renditionRef.current.location?.start?.index ?? 0;
+          const currentIndex = (renditionRef.current.location?.start as { index?: number })?.index ?? 0;
           const progress = total > 0 ? Math.min(Math.round(((currentIndex + 1) / total) * 100), 100) : 0;
           setProgress(progress);
           onProgressChange(loc, progress);

@@ -9,7 +9,7 @@ export function useReader(bookId: string | undefined) {
   const [book, setBook] = useState<BookRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { setLocation, setIsLoading, reset } = useReaderStore();
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     if (!bookId) return;

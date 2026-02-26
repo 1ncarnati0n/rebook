@@ -1,11 +1,10 @@
-import { Sun, Moon, Type, BookOpen, ScrollText, Minus, Plus } from 'lucide-react';
+import { Sun, Moon, BookOpen, ScrollText, Minus, Plus } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useSettingsStore } from '@/stores/settingsStore';
 import type { ReaderTheme, ViewMode } from '@/types/settings';
