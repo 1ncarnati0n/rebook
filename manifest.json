@@ -1,9 +1,0 @@
-  {
-    "manifest_version": 3,
-    "name": "Rebook",
-    "version": "0.1.0",
-    "description": "EPUB reader",
-    "action": {
-      "default_popup": "index.html"
-    }
-  }

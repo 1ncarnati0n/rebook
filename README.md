@@ -71,10 +71,23 @@ src/
   "name": "Rebook",
   "version": "0.1.0",
   "action": {
-    "default_popup": "index.html"
+    "default_title": "Open Rebook"
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "permissions": ["storage"]
 }
+```
+
+`public/background.js` 예시:
+
+```js
+chrome.action.onClicked.addListener(() => {
+  chrome.tabs.create({
+    url: chrome.runtime.getURL('index.html#/library'),
+  });
+});
 ```
 
 로딩 방법:
