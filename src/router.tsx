@@ -1,6 +1,4 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { LibraryPage } from '@/features/library/components/LibraryPage';
-import { ReaderPage } from '@/features/reader/components/ReaderPage';
 
 export const router = createBrowserRouter([
   {
@@ -9,10 +7,20 @@ export const router = createBrowserRouter([
   },
   {
     path: '/library',
-    element: <LibraryPage />,
+    lazy: async () => {
+      const { LibraryPage } = await import(
+        '@/features/library/components/LibraryPage'
+      );
+      return { Component: LibraryPage };
+    },
   },
   {
     path: '/reader/:bookId',
-    element: <ReaderPage />,
+    lazy: async () => {
+      const { ReaderPage } = await import(
+        '@/features/reader/components/ReaderPage'
+      );
+      return { Component: ReaderPage };
+    },
   },
 ]);

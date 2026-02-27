@@ -2,11 +2,17 @@ import { useEffect } from 'react';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const appDarkMode = useSettingsStore((s) => s.appDarkMode);
+  const theme = useSettingsStore((state) => state.theme);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', appDarkMode);
-  }, [appDarkMode]);
+    const root = document.documentElement;
+    root.classList.remove('dark');
+    root.classList.toggle('reader-sepia', theme === 'sepia');
+
+    return () => {
+      root.classList.remove('reader-sepia');
+    };
+  }, [theme]);
 
   return <>{children}</>;
 }

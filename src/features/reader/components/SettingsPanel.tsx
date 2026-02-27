@@ -1,4 +1,4 @@
-import { Sun, Moon, BookOpen, ScrollText, Minus, Plus } from 'lucide-react';
+import { BookOpen, ScrollText, Minus, Plus } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -17,7 +17,6 @@ interface SettingsPanelProps {
 const THEMES: { value: ReaderTheme; label: string; bg: string; border: string }[] = [
   { value: 'light', label: 'Light', bg: '#ffffff', border: '#e5e5e5' },
   { value: 'sepia', label: 'Sepia', bg: '#f4ecd8', border: '#d4c4a8' },
-  { value: 'dark', label: 'Dark', bg: '#1c1c1e', border: '#3a3a3c' },
 ];
 
 const VIEW_MODES: { value: ViewMode; label: string; icon: typeof BookOpen }[] = [
@@ -32,13 +31,11 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
     lineHeight,
     fontFamily,
     viewMode,
-    appDarkMode,
     setFontSize,
     setTheme,
     setLineHeight,
     setFontFamily,
     setViewMode,
-    toggleDarkMode,
   } = useSettingsStore();
 
   return (
@@ -181,32 +178,6 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
                   <span className="text-xs font-medium">{t.label}</span>
                 </button>
               ))}
-            </div>
-          </section>
-
-          {/* App Dark Mode */}
-          <section>
-            <div className="flex items-center justify-between rounded-xl bg-muted/30 px-4 py-3">
-              <div className="flex items-center gap-3">
-                {appDarkMode ? (
-                  <Moon className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <Sun className="h-4 w-4 text-muted-foreground" />
-                )}
-                <span className="text-sm font-medium">Dark Mode</span>
-              </div>
-              <button
-                onClick={toggleDarkMode}
-                className={`relative h-7 w-12 rounded-full transition-colors ${
-                  appDarkMode ? 'bg-foreground' : 'bg-muted-foreground/20'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-background shadow-sm transition-transform ${
-                    appDarkMode ? 'translate-x-5' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
             </div>
           </section>
         </div>

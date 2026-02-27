@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReaderStore } from '@/stores/readerStore';
 import { bookRepository } from '@/db/bookRepository';
-import { arrayBufferToUrl } from '@/lib/epub-utils';
+import { arrayBufferToUrl } from '@/lib/storage';
 import type { BookRecord } from '@/types/book';
 
 export function useReader(bookId: string | undefined) {

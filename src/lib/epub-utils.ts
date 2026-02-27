@@ -1,5 +1,3 @@
-import ePub from 'epubjs';
-
 interface EpubMetadata {
   title: string;
   author: string;
@@ -9,6 +7,7 @@ interface EpubMetadata {
 export async function extractEpubMetadata(
   arrayBuffer: ArrayBuffer,
 ): Promise<EpubMetadata> {
+  const { default: ePub } = await import('epubjs');
   const book = ePub(arrayBuffer);
   await book.ready;
 
@@ -30,9 +29,4 @@ export async function extractEpubMetadata(
   book.destroy();
 
   return { title, author, coverData };
-}
-
-export function arrayBufferToUrl(buffer: ArrayBuffer): string {
-  const blob = new Blob([buffer], { type: 'application/epub+zip' });
-  return URL.createObjectURL(blob);
 }

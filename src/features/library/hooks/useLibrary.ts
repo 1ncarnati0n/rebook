@@ -2,7 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryStore } from '@/stores/libraryStore';
 import { bookRepository } from '@/db/bookRepository';
-import { extractEpubMetadata } from '@/lib/epub-utils';
 import { fileToArrayBuffer, isEpubFile } from '@/lib/storage';
 import type { BookRecord } from '@/types/book';
 
@@ -22,6 +21,7 @@ export function useLibrary() {
       setIsUploading(true);
       try {
         const arrayBuffer = await fileToArrayBuffer(file);
+        const { extractEpubMetadata } = await import('@/lib/epub-utils');
         const metadata = await extractEpubMetadata(arrayBuffer);
         const id = crypto.randomUUID();
         const now = Date.now();

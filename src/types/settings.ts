@@ -1,4 +1,4 @@
-export type ReaderTheme = 'light' | 'sepia' | 'dark';
+export type ReaderTheme = 'light' | 'sepia';
 export type ViewMode = 'paginated' | 'scrolled';
 
 export interface ReaderSettings {
@@ -7,5 +7,4 @@ export interface ReaderSettings {
   lineHeight: number; // 1.2-2.0
   fontFamily: 'serif' | 'sans-serif';
   viewMode: ViewMode;
-  appDarkMode: boolean;
 }
