@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, BookOpen } from 'lucide-react';
 import { bookRepository } from '@/db/bookRepository';
@@ -13,15 +13,34 @@ interface BookCardProps {
 export function BookCard({ book, onDelete }: BookCardProps) {
   const navigate = useNavigate();
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
-    bookRepository.getCover(book.id).then((blob) => {
-      if (blob) setCoverUrl(URL.createObjectURL(blob));
-    });
+    let isCancelled = false;
+
+    void bookRepository
+      .getCover(book.id)
+      .then((blob) => {
+        if (!blob || isCancelled) return;
+
+        const nextObjectUrl = URL.createObjectURL(blob);
+        if (objectUrlRef.current) {
+          URL.revokeObjectURL(objectUrlRef.current);
+        }
+        objectUrlRef.current = nextObjectUrl;
+        setCoverUrl(nextObjectUrl);
+      })
+      .catch(() => {
+        // Cover loading failures should not break the card rendering.
+      });
+
     return () => {
-      if (coverUrl) URL.revokeObjectURL(coverUrl);
+      isCancelled = true;
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book.id]);
 
   const rounded = Math.round(book.progress);

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useReader } from '../hooks/useReader';
@@ -19,8 +19,6 @@ export function ReaderPage() {
 
   const [tocOpen, setTocOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const renditionRef = useRef<HTMLDivElement>(null);
 
   const handleToggleBookmark = useCallback(() => {
     if (!currentLocation) return;
@@ -72,7 +70,7 @@ export function ReaderPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background" ref={renditionRef}>
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       <ReaderToolbar
         title={book.title}
         onToggleToc={() => setTocOpen(true)}

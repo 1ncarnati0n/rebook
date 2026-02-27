@@ -3,11 +3,8 @@ import type { BookmarkRecord } from '@/types/bookmark';
 
 export const bookmarkRepository = {
   async getByBookId(bookId: string): Promise<BookmarkRecord[]> {
-    return db.bookmarks
-      .where('bookId')
-      .equals(bookId)
-      .reverse()
-      .sortBy('createdAt');
+    const bookmarks = await db.bookmarks.where('bookId').equals(bookId).toArray();
+    return bookmarks.sort((a, b) => b.createdAt - a.createdAt);
   },
 
   async add(bookmark: BookmarkRecord): Promise<void> {

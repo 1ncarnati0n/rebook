@@ -9,48 +9,110 @@ export function useReader(bookId: string | undefined) {
   const [book, setBook] = useState<BookRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { setLocation, setIsLoading, reset } = useReaderStore();
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingProgressRef = useRef<{
+    location: string;
+    progress: number;
+  } | null>(null);
+
+  const flushPendingProgress = useCallback((targetBookId: string) => {
+    const pending = pendingProgressRef.current;
+    if (!pending) return;
+
+    pendingProgressRef.current = null;
+    void bookRepository.updateProgress(
+      targetBookId,
+      pending.location,
+      pending.progress,
+    );
+  }, []);
 
   useEffect(() => {
-    if (!bookId) return;
-
-    let blobUrl: string | null = null;
-
     reset();
-
-    bookRepository.getBook(bookId).then((record) => {
-      if (!record) {
-        setError('Book not found');
-        setIsLoading(false);
-        return;
+    setError(null);
+    setBook(null);
+    setBookUrl((previousUrl) => {
+      if (previousUrl) {
+        URL.revokeObjectURL(previousUrl);
       }
-      setBook(record);
-      const url = arrayBufferToUrl(record.fileData);
-      blobUrl = url;
-      setBookUrl(url);
-
-      if (record.lastLocation) {
-        setLocation(record.lastLocation);
-      }
-      setIsLoading(false);
+      return null;
     });
 
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    if (!bookId) {
+      setIsLoading(false);
+      return;
+    }
+
+    let isCancelled = false;
+    let blobUrl: string | null = null;
+
+    const loadBook = async () => {
+      try {
+        const record = await bookRepository.getBook(bookId);
+        if (isCancelled) return;
+
+        if (!record) {
+          setError('Book not found');
+          return;
+        }
+
+        setBook(record);
+        const url = arrayBufferToUrl(record.fileData);
+        blobUrl = url;
+
+        if (isCancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+
+        setBookUrl(url);
+        if (record.lastLocation) {
+          setLocation(record.lastLocation);
+        }
+      } catch {
+        if (!isCancelled) {
+          setError('Failed to load book');
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
     };
-  }, [bookId, reset, setLocation, setIsLoading]);
+
+    void loadBook();
+
+    return () => {
+      isCancelled = true;
+
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+
+      flushPendingProgress(bookId);
+
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [bookId, flushPendingProgress, reset, setLocation, setIsLoading]);
 
   const saveProgress = useCallback(
     (location: string, progress: number) => {
       if (!bookId) return;
 
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      pendingProgressRef.current = { location, progress };
+
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+
       saveTimerRef.current = setTimeout(() => {
-        bookRepository.updateProgress(bookId, location, progress);
+        flushPendingProgress(bookId);
       }, 1000);
     },
-    [bookId],
+    [bookId, flushPendingProgress],
   );
 
   return { bookUrl, book, error, saveProgress };

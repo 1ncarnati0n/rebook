@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLibraryStore } from '@/stores/libraryStore';
 import { bookRepository } from '@/db/bookRepository';
 import { extractEpubMetadata } from '@/lib/epub-utils';
-import { fileToArrayBuffer } from '@/lib/storage';
+import { fileToArrayBuffer, isEpubFile } from '@/lib/storage';
 import type { BookRecord } from '@/types/book';
 
 export function useLibrary() {
@@ -17,7 +17,7 @@ export function useLibrary() {
 
   const uploadBook = useCallback(
     async (file: File) => {
-      if (!file.name.endsWith('.epub')) return;
+      if (!isEpubFile(file)) return;
 
       setIsUploading(true);
       try {

@@ -68,9 +68,9 @@ export function TableOfContents({
         <div className="mt-3 overflow-y-auto px-3 pb-4" style={{ maxHeight: 'calc(100vh - 100px)' }}>
           {activeTab === 'toc' ? (
             <nav className="space-y-0.5">
-              {toc.map((item, index) => (
+              {toc.map((item) => (
                 <button
-                  key={index}
+                  key={`${item.href}-${item.label}`}
                   onClick={() => {
                     onNavigate(item.href);
                     onOpenChange(false);

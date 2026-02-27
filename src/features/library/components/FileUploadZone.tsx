@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 import { Upload, Loader2, Plus } from 'lucide-react';
+import { isEpubFile } from '@/lib/storage';
 
 interface FileUploadZoneProps {
   onUpload: (file: File) => void;
@@ -21,7 +22,7 @@ export function FileUploadZone({
       setIsDragOver(false);
 
       const file = e.dataTransfer.files[0];
-      if (file?.name.endsWith('.epub')) {
+      if (file && isEpubFile(file)) {
         onUpload(file);
       }
     },

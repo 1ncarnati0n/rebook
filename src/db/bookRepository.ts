@@ -1,6 +1,30 @@
 import { db } from './database';
 import type { BookMeta, BookRecord } from '@/types/book';
 
+function toBookMeta(record: BookRecord): BookMeta {
+  const {
+    id,
+    title,
+    author,
+    addedAt,
+    lastReadAt,
+    lastLocation,
+    progress,
+    fileSize,
+  } = record;
+
+  return {
+    id,
+    title,
+    author,
+    addedAt,
+    lastReadAt,
+    lastLocation,
+    progress,
+    fileSize,
+  };
+}
+
 export const bookRepository = {
   async addBook(book: BookRecord): Promise<void> {
     await db.books.put(book);
@@ -8,7 +32,7 @@ export const bookRepository = {
 
   async getAllMeta(): Promise<BookMeta[]> {
     const books = await db.books.orderBy('lastReadAt').reverse().toArray();
-    return books.map(({ fileData: _f, coverData: _c, ...meta }) => meta);
+    return books.map(toBookMeta);
   },
 
   async getBook(id: string): Promise<BookRecord | undefined> {
