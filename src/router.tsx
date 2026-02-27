@@ -1,6 +1,10 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter,createHashRouter , Navigate } from 'react-router-dom';
 
-export const router = createBrowserRouter([
+const isExtension = typeof window !== 'undefined' && window.location.protocol === 'chrome-extension:';
+
+const createRouter = isExtension ? createHashRouter : createBrowserRouter;
+
+export const router = createRouter([
   {
     path: '/',
     element: <Navigate to="/library" replace />,
