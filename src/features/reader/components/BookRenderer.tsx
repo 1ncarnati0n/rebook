@@ -9,6 +9,9 @@ import {
   normalizeArrowKey,
   scrollRenditionByDirection,
 } from '@/features/reader/lib/rendition-navigation';
+import { observeAndStripSandbox, patchEpubIframeSandbox } from '@/features/reader/lib/patch-iframe-sandbox';
+
+patchEpubIframeSandbox();
 
 interface BookRendererProps {
   url: string;
@@ -164,9 +167,24 @@ export function BookRenderer({
     (rendition: Rendition) => {
       renditionRef.current = rendition;
 
+      rendition.on('displayerror', (err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        if (!message.includes('startContainer')) return;
+
+        // Recover from stale/invalid saved CFI by falling back to the beginning.
+        setLocation('0');
+        void rendition.display(0).catch(() => undefined);
+      });
+
       // Inject Korean web fonts into epub iframe on each chapter load
       rendition.hooks.content.register(
         (contents: { document: Document; window: Window }) => {
+          // Safety net: strip sandbox if the MutationObserver missed it.
+          const iframe = contents.document.defaultView?.frameElement;
+          if (iframe instanceof HTMLIFrameElement && iframe.hasAttribute('sandbox')) {
+            iframe.removeAttribute('sandbox');
+          }
+
           if (!observedDocumentsRef.current.has(contents.document)) {
             observedDocumentsRef.current.add(contents.document);
             contents.window.addEventListener(
@@ -199,12 +217,21 @@ export function BookRenderer({
             link.dataset.rebookFont = href;
             contents.document.head.appendChild(link);
           });
+
+          // Hint translation engines/extensions that this chapter is translatable text.
+          const html = contents.document.documentElement;
+          const body = contents.document.body;
+          const lang = html.getAttribute('lang') || body.getAttribute('lang') || 'auto';
+          html.setAttribute('translate', 'yes');
+          html.setAttribute('lang', lang);
+          body.setAttribute('translate', 'yes');
+          if (!body.getAttribute('lang')) body.setAttribute('lang', lang);
         },
       );
 
       applyStyles(rendition);
     },
-    [applyStyles, handleArrowKeyScroll],
+    [applyStyles, handleArrowKeyScroll, setLocation],
   );
 
   // Re-apply styles when settings change
@@ -290,6 +317,21 @@ export function BookRenderer({
     [viewMode, url],
   );
 
+  // Strip sandbox from epub.js iframes so Chrome extensions can inject scripts.
+  useEffect(() => {
+    if (!containerRef.current) return;
+    return observeAndStripSandbox(containerRef.current);
+  }, [readerRenderKey]);
+
+  const epubOptions = useMemo(
+    () => ({
+      manager: 'default',
+      flow: isScrolled ? 'scrolled' : 'paginated',
+      width: '100%',
+    }),
+    [isScrolled],
+  );
+
   return (
     <div ref={containerRef} className="h-full w-full" style={{ position: 'relative' }}>
       <ReactReader
@@ -304,12 +346,7 @@ export function BookRenderer({
         epubInitOptions={{
           openAs: 'epub',
         }}
-        epubOptions={{
-          manager: 'default',
-          flow: isScrolled ? 'scrolled' : 'paginated',
-          width: '100%',
-          ...(isScrolled ? { allowScriptedContent: true } : {}),
-        }}
+        epubOptions={epubOptions}
         readerStyles={readerStyles}
       />
     </div>

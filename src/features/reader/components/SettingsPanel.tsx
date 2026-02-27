@@ -2,6 +2,7 @@ import { BookOpen, ScrollText, Minus, Plus } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
@@ -45,6 +46,9 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
           <SheetTitle className="pr-8 text-base font-semibold tracking-tight">
             Settings
           </SheetTitle>
+          <SheetDescription className="sr-only">
+            Adjust reader settings such as view mode, font, and theme.
+          </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-7 px-5 pb-8">

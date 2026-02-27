@@ -35,7 +35,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'rebook-settings',
-      version: 2,
+      version: 4,
       migrate: (persistedState) => {
         const state = (persistedState ?? {}) as Partial<
           ReaderSettings & { theme?: ReaderTheme | 'dark' }

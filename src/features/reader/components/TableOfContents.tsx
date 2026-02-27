@@ -3,6 +3,7 @@ import { BookmarkIcon, List, Trash2 } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
@@ -34,6 +35,9 @@ export function TableOfContents({
       <SheetContent side="left" className="w-[320px] border-r-0 p-0 shadow-2xl">
         <SheetHeader className="px-5 pt-5 pb-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <SheetDescription className="sr-only">
+            Navigate chapters and bookmarks.
+          </SheetDescription>
           <div className="flex gap-1 rounded-xl bg-muted/50 p-1">
             <button
               onClick={() => setActiveTab('toc')}
