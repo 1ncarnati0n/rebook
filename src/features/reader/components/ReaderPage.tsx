@@ -14,7 +14,7 @@ export function ReaderPage() {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const { bookUrl, book, error, saveProgress } = useReader(bookId);
-  const { bookmarks, addBookmark, removeBookmark, isBookmarked } = useBookmarks(bookId);
+  const { bookmarks, addBookmark, updateBookmark, removeBookmark, isBookmarked } = useBookmarks(bookId);
   const { currentLocation, currentChapter, isLoading } = useReaderStore();
 
   const [tocOpen, setTocOpen] = useState(false);
@@ -73,29 +73,32 @@ export function ReaderPage() {
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <ReaderToolbar
         title={book.title}
-        onToggleToc={() => setTocOpen(true)}
+        onToggleToc={() => setTocOpen((v) => !v)}
+        isTocOpen={tocOpen}
         onToggleSettings={() => setSettingsOpen(true)}
         onToggleBookmark={handleToggleBookmark}
         isBookmarked={isBookmarked(currentLocation)}
       />
 
-      <main className="relative min-h-0 flex-1">
-        <BookRenderer
-          url={bookUrl}
-          initialLocation={book.lastLocation ?? null}
-          onProgressChange={saveProgress}
+      <div className="relative flex min-h-0 flex-1">
+        <TableOfContents
+          open={tocOpen}
+          onOpenChange={setTocOpen}
+          onNavigate={handleNavigate}
+          bookmarks={bookmarks}
+          onUpdateBookmark={updateBookmark}
+          onRemoveBookmark={removeBookmark}
         />
-      </main>
+        <main className="relative min-h-0 flex-1">
+          <BookRenderer
+            url={bookUrl}
+            initialLocation={book.lastLocation ?? null}
+            onProgressChange={saveProgress}
+          />
+        </main>
+      </div>
 
       <ReaderFooter />
-
-      <TableOfContents
-        open={tocOpen}
-        onOpenChange={setTocOpen}
-        onNavigate={handleNavigate}
-        bookmarks={bookmarks}
-        onRemoveBookmark={removeBookmark}
-      />
 
       <SettingsPanel
         open={settingsOpen}

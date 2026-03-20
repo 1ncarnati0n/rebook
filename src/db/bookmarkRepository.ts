@@ -11,6 +11,10 @@ export const bookmarkRepository = {
     await db.bookmarks.put(bookmark);
   },
 
+  async update(id: string, changes: Partial<BookmarkRecord>): Promise<void> {
+    await db.bookmarks.update(id, changes);
+  },
+
   async remove(id: string): Promise<void> {
     await db.bookmarks.delete(id);
   },

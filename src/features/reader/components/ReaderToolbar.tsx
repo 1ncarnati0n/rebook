@@ -8,6 +8,7 @@ interface ReaderToolbarProps {
   onToggleSettings: () => void;
   onToggleBookmark: () => void;
   isBookmarked: boolean;
+  isTocOpen?: boolean;
 }
 
 export function ReaderToolbar({
@@ -16,6 +17,7 @@ export function ReaderToolbar({
   onToggleSettings,
   onToggleBookmark,
   isBookmarked,
+  isTocOpen,
 }: ReaderToolbarProps) {
   const navigate = useNavigate();
 
@@ -53,7 +55,7 @@ export function ReaderToolbar({
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 rounded-xl"
+          className={`h-9 w-9 rounded-xl ${isTocOpen ? 'bg-muted' : ''}`}
           onClick={onToggleToc}
         >
           <List className="h-[18px] w-[18px]" />

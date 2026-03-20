@@ -32,6 +32,13 @@ export function useBookmarks(bookId: string | undefined) {
     [bookId],
   );
 
+  const updateBookmark = useCallback(async (id: string, chapterName: string) => {
+    await bookmarkRepository.update(id, { chapterName });
+    setBookmarks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, chapterName } : b)),
+    );
+  }, []);
+
   const removeBookmark = useCallback(async (id: string) => {
     await bookmarkRepository.remove(id);
     setBookmarks((prev) => prev.filter((b) => b.id !== id));
@@ -45,5 +52,5 @@ export function useBookmarks(bookId: string | undefined) {
     [bookmarks],
   );
 
-  return { bookmarks, addBookmark, removeBookmark, isBookmarked };
+  return { bookmarks, addBookmark, updateBookmark, removeBookmark, isBookmarked };
 }
