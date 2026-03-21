@@ -32,9 +32,13 @@ export function ReaderPage() {
   }, [currentLocation, currentChapter, bookmarks, addBookmark, removeBookmark]);
 
   const handleNavigate = useCallback(
-    (href: string) => {
+    (href: string, chapterName?: string) => {
       const store = useReaderStore.getState();
       store.setLocation(href);
+      store.setCurrentTocHref(href);
+      if (chapterName) {
+        store.setCurrentChapter(chapterName);
+      }
     },
     [],
   );

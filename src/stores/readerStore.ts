@@ -3,12 +3,14 @@ import type { NavItem } from 'epubjs';
 
 interface ReaderState {
   currentLocation: string | null;
+  currentTocHref: string | null;
   toc: NavItem[];
   currentChapter: string;
   progress: number;
   isLoading: boolean;
 
   setLocation: (location: string) => void;
+  setCurrentTocHref: (href: string | null) => void;
   setToc: (toc: NavItem[]) => void;
   setCurrentChapter: (chapter: string) => void;
   setProgress: (progress: number) => void;
@@ -18,12 +20,14 @@ interface ReaderState {
 
 export const useReaderStore = create<ReaderState>()((set) => ({
   currentLocation: null,
+  currentTocHref: null,
   toc: [],
   currentChapter: '',
   progress: 0,
   isLoading: true,
 
   setLocation: (currentLocation) => set({ currentLocation }),
+  setCurrentTocHref: (currentTocHref) => set({ currentTocHref }),
   setToc: (toc) => set({ toc }),
   setCurrentChapter: (currentChapter) => set({ currentChapter }),
   setProgress: (progress) => set({ progress }),
@@ -31,6 +35,7 @@ export const useReaderStore = create<ReaderState>()((set) => ({
   reset: () =>
     set({
       currentLocation: null,
+      currentTocHref: null,
       toc: [],
       currentChapter: '',
       progress: 0,

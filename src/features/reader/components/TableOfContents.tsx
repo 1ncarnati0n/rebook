@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookmarkIcon, Check, ChevronDown, ChevronRight, List, Pencil, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useReaderStore } from '@/stores/readerStore';
 import type { BookmarkRecord } from '@/types/bookmark';
 import type { NavItem } from 'epubjs';
+import { findBestMatchingTocPath, getTocItemLabel } from '@/features/reader/lib/toc';
 
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
@@ -11,7 +12,7 @@ const MAX_WIDTH = 480;
 interface TableOfContentsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNavigate: (href: string) => void;
+  onNavigate: (href: string, chapterName?: string) => void;
   bookmarks: BookmarkRecord[];
   onUpdateBookmark: (id: string, chapterName: string) => void;
   onRemoveBookmark: (id: string) => void;
@@ -19,22 +20,38 @@ interface TableOfContentsProps {
 
 type Tab = 'toc' | 'bookmarks';
 
-function TocItem({
-  item,
-  depth,
-  onNavigate,
-}: {
+interface TocItemProps {
   item: NavItem;
   depth: number;
-  onNavigate: (href: string) => void;
-}) {
+  open: boolean;
+  activeItem: NavItem | null;
+  onNavigate: (href: string, chapterName?: string) => void;
+}
+
+function getTocLabelClass(isActive: boolean, depth: number): string {
+  if (isActive) return 'font-bold text-foreground';
+  if (depth === 0) return 'font-medium text-foreground';
+  return 'text-muted-foreground';
+}
+
+function TocItem({ item, depth, open, activeItem, onNavigate }: TocItemProps) {
   const [expanded, setExpanded] = useState(true);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const hasChildren = item.subitems && item.subitems.length > 0;
+  const label = getTocItemLabel(item);
+  const isActive = activeItem === item;
+
+  useEffect(() => {
+    if (open && isActive) {
+      buttonRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [isActive, open]);
 
   return (
     <div>
       <button
-        onClick={() => onNavigate(item.href)}
+        ref={buttonRef}
+        onClick={() => onNavigate(item.href, label)}
         className="group flex w-full items-center gap-1 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/70"
         style={{ paddingLeft: `${8 + depth * 16}px` }}
       >
@@ -47,21 +64,13 @@ function TocItem({
               setExpanded(!expanded);
             }}
           >
-            {expanded ? (
-              <ChevronDown className="h-3 w-3" />
-            ) : (
-              <ChevronRight className="h-3 w-3" />
-            )}
+            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           </span>
         ) : (
           <span className="w-4 shrink-0" />
         )}
-        <span
-          className={`truncate leading-snug ${
-            depth === 0 ? 'font-medium' : 'text-muted-foreground'
-          }`}
-        >
-          {item.label.trim()}
+        <span className={`truncate leading-snug ${getTocLabelClass(isActive, depth)}`}>
+          {label}
         </span>
       </button>
       {hasChildren && expanded && (
@@ -71,6 +80,8 @@ function TocItem({
               key={`${child.href}-${child.label}`}
               item={child}
               depth={depth + 1}
+              open={open}
+              activeItem={activeItem}
               onNavigate={onNavigate}
             />
           ))}
@@ -80,17 +91,14 @@ function TocItem({
   );
 }
 
-function BookmarkItem({
-  bookmark,
-  onNavigate,
-  onUpdate,
-  onRemove,
-}: {
+interface BookmarkItemProps {
   bookmark: BookmarkRecord;
-  onNavigate: (href: string) => void;
+  onNavigate: (href: string, chapterName?: string) => void;
   onUpdate: (id: string, chapterName: string) => void;
   onRemove: (id: string) => void;
-}) {
+}
+
+function BookmarkItem({ bookmark, onNavigate, onUpdate, onRemove }: BookmarkItemProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(bookmark.chapterName);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -114,15 +122,9 @@ function BookmarkItem({
 
   return (
     <div className="group flex items-start gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-muted/70">
-      <button
-        onClick={() => onNavigate(bookmark.cfi)}
-        className="flex-1 text-left"
-      >
+      <button onClick={() => onNavigate(bookmark.cfi)} className="flex-1 text-left">
         {editing ? (
-          <div
-            className="flex items-center gap-1"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <input
               ref={inputRef}
               value={draft}
@@ -157,20 +159,14 @@ function BookmarkItem({
       <div className="mt-0.5 flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         {editing ? (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              save();
-            }}
+            onClick={(e) => { e.stopPropagation(); save(); }}
             className="rounded-lg p-1.5 hover:bg-muted"
           >
             <Check className="h-3 w-3 text-primary" />
           </button>
         ) : (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditing(true);
-            }}
+            onClick={(e) => { e.stopPropagation(); setEditing(true); }}
             className="rounded-lg p-1.5 hover:bg-muted"
           >
             <Pencil className="h-3 w-3 text-muted-foreground" />
@@ -195,10 +191,16 @@ export function TableOfContents({
   onUpdateBookmark,
   onRemoveBookmark,
 }: TableOfContentsProps) {
-  const { toc } = useReaderStore();
+  const { toc, currentTocHref } = useReaderStore();
   const [activeTab, setActiveTab] = useState<Tab>('toc');
   const [width, setWidth] = useState(280);
   const isResizing = useRef(false);
+
+  const activeTocPath = useMemo(
+    () => findBestMatchingTocPath(toc, currentTocHref),
+    [toc, currentTocHref],
+  );
+  const activeTocItem = activeTocPath?.at(-1) ?? null;
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -284,6 +286,8 @@ export function TableOfContents({
                 key={`${item.href}-${item.label}`}
                 item={item}
                 depth={0}
+                open={open}
+                activeItem={activeTocItem}
                 onNavigate={onNavigate}
               />
             ))}

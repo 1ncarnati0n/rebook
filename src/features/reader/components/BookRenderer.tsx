@@ -9,6 +9,7 @@ import {
   normalizeArrowKey,
   scrollRenditionByDirection,
 } from '@/features/reader/lib/rendition-navigation';
+import { findBestMatchingTocPath, getTocItemLabel, observeTocSections } from '@/features/reader/lib/toc';
 import { observeAndStripSandbox, patchEpubIframeSandbox } from '@/features/reader/lib/patch-iframe-sandbox';
 
 patchEpubIframeSandbox();
@@ -28,6 +29,60 @@ const FONT_URLS = [
   'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap',
   'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css',
 ];
+
+type RenditionDisplayedLocation = {
+  href?: string;
+};
+
+type RenditionRangeLocation = {
+  start?: RenditionDisplayedLocation;
+  end?: RenditionDisplayedLocation;
+};
+
+type RenditionLocationSource = Rendition & {
+  currentLocation?: () =>
+    | RenditionDisplayedLocation
+    | Promise<RenditionDisplayedLocation>
+    | undefined;
+  location?: RenditionRangeLocation | undefined;
+  manager?: unknown;
+};
+
+function getCurrentRenditionHref(
+  rendition: Rendition | null | undefined,
+): string | null {
+  if (!rendition) return null;
+
+  const locationSource = rendition as RenditionLocationSource;
+  const rangeHref =
+    locationSource.location?.start?.href ?? locationSource.location?.end?.href;
+  if (rangeHref) {
+    return rangeHref;
+  }
+
+  if (!locationSource.manager || !locationSource.currentLocation) {
+    return null;
+  }
+
+  let currentLocation: RenditionDisplayedLocation | Promise<RenditionDisplayedLocation> | undefined;
+
+  try {
+    currentLocation = locationSource.currentLocation();
+  } catch {
+    // epub.js can throw here before the manager is fully initialized.
+    return null;
+  }
+
+  if (
+    currentLocation &&
+    typeof currentLocation === 'object' &&
+    'href' in currentLocation
+  ) {
+    return currentLocation.href ?? null;
+  }
+
+  return null;
+}
 
 function getEventElement(target: EventTarget | null): Element | null {
   if (!target || typeof target !== 'object' || !('nodeType' in target)) {
@@ -64,11 +119,19 @@ export function BookRenderer({
   onProgressChange,
 }: BookRendererProps) {
   const renditionRef = useRef<Rendition | null>(null);
-  const tocRef = useRef<{ label: string; href: string }[]>([]);
+  const tocRef = useRef<NavItem[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const observedDocumentsRef = useRef<WeakSet<Document>>(new WeakSet());
+  const sectionObserverCleanupRef = useRef<(() => void) | null>(null);
 
-  const { currentLocation, setLocation, setToc, setCurrentChapter, setProgress } =
+  const {
+    currentLocation,
+    setLocation,
+    setCurrentTocHref,
+    setToc,
+    setCurrentChapter,
+    setProgress,
+  } =
     useReaderStore();
   const { fontSize, theme, lineHeight, fontFamily, viewMode } = useSettingsStore();
 
@@ -226,6 +289,20 @@ export function BookRenderer({
           html.setAttribute('lang', lang);
           body.setAttribute('translate', 'yes');
           if (!body.getAttribute('lang')) body.setAttribute('lang', lang);
+
+          // 이전 섹션 옵저버 정리 후 새로 설치
+          sectionObserverCleanupRef.current?.();
+          const currentHref = getCurrentRenditionHref(rendition);
+          sectionObserverCleanupRef.current = observeTocSections(
+            contents.document,
+            contents.window,
+            tocRef.current,
+            currentHref,
+            (sectionHref) => {
+              const store = useReaderStore.getState();
+              store.setCurrentTocHref(sectionHref);
+            },
+          );
         },
       );
 
@@ -241,6 +318,22 @@ export function BookRenderer({
     }
   }, [applyStyles]);
 
+  const syncCurrentTocState = useCallback((rendition: Rendition | null | undefined) => {
+    const currentHref = getCurrentRenditionHref(rendition);
+    if (!currentHref) return;
+
+    const activePath = findBestMatchingTocPath(tocRef.current, currentHref);
+    const activeItem = activePath?.at(-1);
+
+    setCurrentTocHref(activeItem?.href ?? currentHref);
+
+    if (activeItem) {
+      setCurrentChapter(getTocItemLabel(activeItem));
+    } else if (tocRef.current.length > 0) {
+      setCurrentChapter('');
+    }
+  }, [setCurrentChapter, setCurrentTocHref]);
+
   const handleLocationChanged = useCallback(
     (loc: string) => {
       setLocation(loc);
@@ -253,28 +346,18 @@ export function BookRenderer({
         onProgressChange(loc, progress);
       }
 
-      // Update current chapter from TOC
-      if (tocRef.current.length > 0) {
-        const chapter = tocRef.current.find(
-          (item) => loc.includes(item.href) || item.href.includes(loc),
-        );
-        if (chapter) {
-          setCurrentChapter(chapter.label);
-        }
-      }
+      syncCurrentTocState(renditionRef.current);
     },
-    [setLocation, setProgress, setCurrentChapter, onProgressChange],
+    [setLocation, setProgress, onProgressChange, syncCurrentTocState],
   );
 
   const handleTocChanged = useCallback(
     (toc: NavItem[]) => {
       setToc(toc);
-      tocRef.current = toc.map((item) => ({
-        label: item.label,
-        href: item.href,
-      }));
+      tocRef.current = toc;
+      syncCurrentTocState(renditionRef.current);
     },
-    [setToc],
+    [setToc, syncCurrentTocState],
   );
 
   const readerLocation = currentLocation || initialLocation || 0;
