@@ -217,8 +217,14 @@ export function observeTocSections(
     rafId = iframeWin.requestAnimationFrame(updateActiveSection);
   };
 
-  const observer = new iframeWin.IntersectionObserver(
-    (entries) => {
+  const IntersectionObserverCtor = (
+    iframeWin as Window & typeof globalThis
+  ).IntersectionObserver;
+
+  if (!IntersectionObserverCtor) return () => {};
+
+  const observer = new IntersectionObserverCtor(
+    (entries: IntersectionObserverEntry[]) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
           visibleSet.add(entry.target);
