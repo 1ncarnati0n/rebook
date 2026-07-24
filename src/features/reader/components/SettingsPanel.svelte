@@ -8,9 +8,9 @@
     onOpenChange: (open: boolean) => void
   }
 
-  const themes: { value: ReaderTheme; label: string; bg: string; border: string }[] = [
-    { value: 'light', label: 'Light', bg: '#ffffff', border: '#e5e5e5' },
-    { value: 'sepia', label: 'Sepia', bg: '#f4ecd8', border: '#d4c4a8' },
+  const themes: { value: ReaderTheme; label: string; color: string; bg: string; border: string }[] = [
+    { value: 'light', label: 'Light', color: '#1a1a2e', bg: '#ffffff', border: '#e5e5e5' },
+    { value: 'sepia', label: 'Sepia', color: '#5b4636', bg: '#f4ecd8', border: '#d4c4a8' },
   ]
 
   const viewModes: { value: ViewMode; label: string }[] = [
@@ -20,6 +20,10 @@
 
   let { open, onOpenChange }: Props = $props()
   let dialog: HTMLDialogElement
+  let defaultFontColor = $derived(
+    themes.find((theme) => theme.value === settingsState.theme)?.color ?? themes[0].color,
+  )
+  let displayedFontColor = $derived(settingsState.fontColor ?? defaultFontColor)
 
   $effect(() => {
     if (!dialog) return
@@ -168,6 +172,39 @@
       </section>
 
       <section>
+        <div class="mb-3 flex items-center justify-between">
+          <label for="reader-font-color" class="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Font Color
+          </label>
+          <span class="font-mono text-xs uppercase text-muted-foreground">{displayedFontColor}</span>
+        </div>
+        <div class="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+          <input
+            id="reader-font-color"
+            type="color"
+            value={displayedFontColor}
+            oninput={(event) => settingsState.setFontColor(event.currentTarget.value)}
+            class="color-picker h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-full border border-border bg-transparent p-0"
+          />
+          <div class="min-w-0 flex-1">
+            <span class="block text-sm font-medium">
+              {settingsState.fontColor ? 'Custom color' : 'Theme default'}
+            </span>
+            <span class="block text-xs text-muted-foreground">EPUB text only</span>
+          </div>
+          <button
+            type="button"
+            aria-label="Reset font color to theme default"
+            disabled={settingsState.fontColor === null}
+            onclick={() => settingsState.setFontColor(null)}
+            class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-default disabled:opacity-40"
+          >
+            Reset
+          </button>
+        </div>
+      </section>
+
+      <section>
         <span class="mb-3 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Reader Theme
         </span>
@@ -196,3 +233,15 @@
     </div>
   </div>
 </dialog>
+
+<style>
+  .color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+
+  .color-picker::-webkit-color-swatch,
+  .color-picker::-moz-color-swatch {
+    border: 0;
+    border-radius: 9999px;
+  }
+</style>

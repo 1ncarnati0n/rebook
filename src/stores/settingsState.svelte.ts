@@ -5,6 +5,7 @@ const STORAGE_VERSION = 4
 
 const DEFAULT_SETTINGS: ReaderSettings = {
   fontSize: 16,
+  fontColor: null,
   theme: 'light',
   lineHeight: 1.6,
   fontFamily: 'serif',
@@ -13,6 +14,12 @@ const DEFAULT_SETTINGS: ReaderSettings = {
 
 function normalizeTheme(theme: unknown): ReaderTheme {
   return theme === 'sepia' ? 'sepia' : 'light'
+}
+
+function normalizeFontColor(fontColor: unknown): string | null {
+  return typeof fontColor === 'string' && /^#[0-9a-f]{6}$/i.test(fontColor)
+    ? fontColor.toLowerCase()
+    : null
 }
 
 function loadSettings(): ReaderSettings {
@@ -28,6 +35,7 @@ function loadSettings(): ReaderSettings {
     return {
       ...DEFAULT_SETTINGS,
       ...state,
+      fontColor: normalizeFontColor(state.fontColor),
       theme: normalizeTheme(state.theme),
     }
   } catch {
@@ -37,6 +45,7 @@ function loadSettings(): ReaderSettings {
 
 class SettingsState {
   fontSize = $state(DEFAULT_SETTINGS.fontSize)
+  fontColor = $state<ReaderSettings['fontColor']>(DEFAULT_SETTINGS.fontColor)
   theme = $state<ReaderTheme>(DEFAULT_SETTINGS.theme)
   lineHeight = $state(DEFAULT_SETTINGS.lineHeight)
   fontFamily = $state<ReaderSettings['fontFamily']>(DEFAULT_SETTINGS.fontFamily)
@@ -48,6 +57,11 @@ class SettingsState {
 
   setFontSize(fontSize: number): void {
     this.fontSize = fontSize
+    this.persist()
+  }
+
+  setFontColor(fontColor: ReaderSettings['fontColor']): void {
+    this.fontColor = normalizeFontColor(fontColor)
     this.persist()
   }
 
@@ -78,6 +92,7 @@ class SettingsState {
         JSON.stringify({
           state: {
             fontSize: this.fontSize,
+            fontColor: this.fontColor,
             theme: this.theme,
             lineHeight: this.lineHeight,
             fontFamily: this.fontFamily,

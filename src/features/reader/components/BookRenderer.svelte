@@ -146,6 +146,7 @@
     current: Rendition,
     settings: {
       fontSize: number
+      fontColor: string | null
       theme: keyof typeof THEME_COLORS
       lineHeight: number
       fontFamily: 'serif' | 'sans-serif'
@@ -170,7 +171,7 @@
       },
     })
     current.themes.select('custom')
-    current.themes.override('color', colors.color)
+    current.themes.override('color', settings.fontColor ?? colors.color, true)
     current.themes.override('background', colors.background)
   }
 
@@ -207,6 +208,7 @@
     const current = rendition
     const settings = {
       fontSize: settingsState.fontSize,
+      fontColor: settingsState.fontColor,
       theme: settingsState.theme,
       lineHeight: settingsState.lineHeight,
       fontFamily: settingsState.fontFamily,
@@ -346,6 +348,7 @@
 
         applyStyles(currentRendition, {
           fontSize: settingsState.fontSize,
+          fontColor: settingsState.fontColor,
           theme: settingsState.theme,
           lineHeight: settingsState.lineHeight,
           fontFamily: settingsState.fontFamily,
