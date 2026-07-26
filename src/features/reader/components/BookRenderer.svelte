@@ -23,6 +23,7 @@
     observeAndStripSandbox,
     patchEpubIframeSandbox,
   } from '@/features/reader/lib/patch-iframe-sandbox'
+  import { relativizeFontSizes } from '@/features/reader/lib/typography'
 
   interface Props {
     url: string
@@ -158,16 +159,16 @@
         ? '"Noto Serif KR", Georgia, "Times New Roman", serif'
         : 'Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", -apple-system, "Helvetica Neue", sans-serif'
 
+    // Sizes are driven only from `html` so the book's own hierarchy survives.
+    // Forcing a size on body would break books using the `body { 62.5% }` idiom.
     current.themes.register('custom', {
+      html: { 'font-size': `${settings.fontSize}px !important` },
       body: {
-        'font-size': `${settings.fontSize}px !important`,
         'line-height': `${settings.lineHeight} !important`,
         'font-family': `${fontStack} !important`,
       },
-      'p, div, span, li, td, th, h1, h2, h3, h4, h5, h6': {
-        'font-size': 'inherit !important',
+      'p, div, li, dd, td, blockquote': {
         'line-height': 'inherit !important',
-        'font-family': 'inherit !important',
       },
     })
     current.themes.select('custom')
@@ -321,6 +322,8 @@
             link.dataset.rebookFont = href
             contents.document.head.appendChild(link)
           }
+
+          relativizeFontSizes(contents.document)
 
           const html = contents.document.documentElement
           const body = contents.document.body
