@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Loader2, Plus, Upload } from 'lucide-svelte'
-  import { isEpubFile } from '@/lib/storage'
 
   let {
     onUpload,
@@ -12,18 +11,10 @@
     compact?: boolean
   } = $props()
 
-  let isDragOver = $state(false)
   let input = $state<HTMLInputElement>()
 
   function openPicker(): void {
     if (!isUploading) input?.click()
-  }
-
-  function handleDrop(event: DragEvent): void {
-    event.preventDefault()
-    isDragOver = false
-    const file = event.dataTransfer?.files[0]
-    if (file && isEpubFile(file)) onUpload(file)
   }
 
   function handleFileSelect(event: Event): void {
@@ -59,19 +50,9 @@
   <div
     role="button"
     tabindex="0"
-    ondragover={(event) => {
-      event.preventDefault()
-      isDragOver = true
-    }}
-    ondragleave={() => (isDragOver = false)}
-    ondrop={handleDrop}
     onclick={openPicker}
     onkeydown={handleKeydown}
-    class={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-8 py-14 transition-all ${
-      isDragOver
-        ? 'border-foreground/30 bg-foreground/5'
-        : 'border-muted-foreground/15 hover:border-foreground/20 hover:bg-muted/30'
-    }`}
+    class="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/15 px-8 py-14 transition-all hover:border-foreground/20 hover:bg-muted/30"
   >
     {#if isUploading}
       <Loader2 class="mb-3 h-8 w-8 animate-spin text-muted-foreground/50" />

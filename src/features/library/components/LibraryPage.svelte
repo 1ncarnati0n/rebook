@@ -14,6 +14,7 @@
   let books = $state<BookMeta[]>([])
   let sortBy = $state<SortBy>('lastReadAt')
   let isUploading = $state(false)
+  let isDragOver = $state(false)
   const sortedBooks = $derived(
     [...books].sort((a, b) =>
       sortBy === 'title' ? a.title.localeCompare(b.title) : b[sortBy] - a[sortBy],
@@ -76,6 +77,37 @@
     books = books.filter((book) => book.id !== id)
   }
 </script>
+
+<svelte:window
+  ondragover={(event) => {
+    event.preventDefault()
+    isDragOver = true
+  }}
+  ondragleave={(event) => {
+    // relatedTarget === null means the pointer left the window, not just a child element
+    if (!event.relatedTarget) isDragOver = false
+  }}
+  ondrop={(event) => {
+    event.preventDefault()
+    isDragOver = false
+    if (isUploading) return
+    // ponytail: first file only, uploadBook navigates away immediately
+    const file = event.dataTransfer?.files[0]
+    if (file) void uploadBook(file)
+  }}
+/>
+
+{#if isDragOver}
+  <div
+    class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+  >
+    <div
+      class="rounded-2xl border-2 border-dashed border-foreground/30 px-10 py-8 text-sm font-medium"
+    >
+      Drop EPUB file here
+    </div>
+  </div>
+{/if}
 
 {#if books.length === 0}
   <div class="flex min-h-screen flex-col bg-background">
