@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { BookOpen, ChevronDown } from 'lucide-svelte'
   import { bookRepository } from '@/db/bookRepository'
-  import { fileToArrayBuffer, isEpubFile } from '@/lib/storage'
+  import { isEpubFile } from '@/lib/storage'
   import { navigate } from '@/router'
   import type { BookMeta, BookRecord } from '@/types/book'
   import BookGrid from './BookGrid.svelte'
@@ -36,7 +36,7 @@
 
     isUploading = true
     try {
-      const arrayBuffer = await fileToArrayBuffer(file)
+      const arrayBuffer = await file.arrayBuffer()
       const { extractEpubMetadata } = await import('@/lib/epub-utils')
       const metadata = await extractEpubMetadata(arrayBuffer)
       const id = crypto.randomUUID()
@@ -53,19 +53,8 @@
         coverData: metadata.coverData,
       }
 
-      await bookRepository.addBook(book)
-      books = [
-        {
-          id,
-          title: book.title,
-          author: book.author,
-          addedAt: now,
-          lastReadAt: now,
-          progress: 0,
-          fileSize: file.size,
-        },
-        ...books,
-      ]
+      const addedBook = await bookRepository.addBook(book)
+      books = [addedBook, ...books]
       navigate(`/reader/${id}`)
     } finally {
       isUploading = false

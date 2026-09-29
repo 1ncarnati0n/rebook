@@ -1,12 +1,3 @@
-export function fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as ArrayBuffer);
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsArrayBuffer(file);
-  });
-}
-
 export function isEpubFile(file: File): boolean {
   const lowerName = file.name.toLowerCase();
   return lowerName.endsWith('.epub') || file.type === 'application/epub+zip';

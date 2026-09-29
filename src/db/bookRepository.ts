@@ -26,8 +26,9 @@ function toBookMeta(record: BookRecord): BookMeta {
 }
 
 export const bookRepository = {
-  async addBook(book: BookRecord): Promise<void> {
+  async addBook(book: BookRecord): Promise<BookMeta> {
     await db.books.put(book);
+    return toBookMeta(book);
   },
 
   async getAllMeta(): Promise<BookMeta[]> {

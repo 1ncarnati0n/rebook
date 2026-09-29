@@ -189,7 +189,6 @@
       <main class="relative min-h-0 flex-1">
         <BookRenderer
           url={bookUrl}
-          initialLocation={book.lastLocation ?? null}
           onProgressChange={saveProgress}
         />
       </main>

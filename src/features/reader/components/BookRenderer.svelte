@@ -8,6 +8,7 @@
   } from 'epubjs'
   import { readerState } from '@/stores/readerState.svelte'
   import { settingsState } from '@/stores/settingsState.svelte'
+  import type { ReaderSettings } from '@/types/settings'
   import {
     getRenditionSpineProgress,
     navigateRenditionByChapter,
@@ -27,7 +28,6 @@
 
   interface Props {
     url: string
-    initialLocation: string | null
     onProgressChange: (location: string, progress: number) => void
   }
 
@@ -58,7 +58,7 @@
     'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css',
   ]
 
-  let { url, initialLocation, onProgressChange }: Props = $props()
+  let { url, onProgressChange }: Props = $props()
   let container: HTMLDivElement
   let viewer: HTMLDivElement
   let rendition = $state.raw<Rendition | null>(null)
@@ -145,13 +145,7 @@
 
   function applyStyles(
     current: Rendition,
-    settings: {
-      fontSize: number
-      fontColor: string | null
-      theme: keyof typeof THEME_COLORS
-      lineHeight: number
-      fontFamily: 'serif' | 'sans-serif'
-    },
+    settings: Omit<ReaderSettings, 'viewMode'>,
   ): void {
     const colors = THEME_COLORS[settings.theme]
     const fontStack =
@@ -174,6 +168,16 @@
     current.themes.select('custom')
     current.themes.override('color', settings.fontColor ?? colors.color, true)
     current.themes.override('background', colors.background)
+  }
+
+  function getStyleSettings(): Omit<ReaderSettings, 'viewMode'> {
+    return {
+      fontSize: settingsState.fontSize,
+      fontColor: settingsState.fontColor,
+      theme: settingsState.theme,
+      lineHeight: settingsState.lineHeight,
+      fontFamily: settingsState.fontFamily,
+    }
   }
 
   function syncCurrentTocState(current: Rendition): void {
@@ -207,13 +211,7 @@
 
   $effect(() => {
     const current = rendition
-    const settings = {
-      fontSize: settingsState.fontSize,
-      fontColor: settingsState.fontColor,
-      theme: settingsState.theme,
-      lineHeight: settingsState.lineHeight,
-      fontFamily: settingsState.fontFamily,
-    }
+    const settings = getStyleSettings()
 
     if (current) applyStyles(current, settings)
   })
@@ -349,20 +347,10 @@
           if (currentRendition) handleRelocated(currentRendition, location)
         })
 
-        applyStyles(currentRendition, {
-          fontSize: settingsState.fontSize,
-          fontColor: settingsState.fontColor,
-          theme: settingsState.theme,
-          lineHeight: settingsState.lineHeight,
-          fontFamily: settingsState.fontFamily,
-        })
+        applyStyles(currentRendition, getStyleSettings())
 
-        const location = readerState.currentLocation || initialLocation || 0
-        if (typeof location === 'number') {
-          await currentRendition.display(location)
-        } else {
-          await currentRendition.display(location)
-        }
+        const location = readerState.currentLocation
+        await (location ? currentRendition.display(location) : currentRendition.display(0))
         if (!cancelled) isReady = true
       } catch {
         if (!cancelled) hasError = true

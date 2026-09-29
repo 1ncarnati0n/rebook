@@ -246,7 +246,7 @@ export function observeTocSections(
   }
 
   // 초기 상태 업데이트 (이미 보이는 섹션 감지)
-  iframeWin.requestAnimationFrame(updateActiveSection);
+  rafId = iframeWin.requestAnimationFrame(updateActiveSection);
 
   return () => {
     observer.disconnect();
